@@ -65,17 +65,19 @@ class VillageState {
 
 // Run the robot until it delivers all the parcels
 function runRobot(state, robot, memory) {
-    for (let turn = 0; ; turn++) {
+    let turn = 0
+    for (; ; turn++) {
         if (state.parcels.length===0) {
-            console.log(`Took ${turn} to deliver all parcels`);
+            //console.log(`Took ${turn} to deliver all parcels`);
             break;
         }
         let action = robot(state, memory); // The robot takes as input the actual state and memory
                                            // and return the new state and memory 
         state = state.move(action.direction);
         memory = action.memory;
-        console.log(`Moved to ${action.direction}`)
+        //console.log(`Moved to ${action.direction}`)
     }
+    return turn;
 }
 
 // Return a randomly picked element from the array
@@ -118,8 +120,63 @@ function routeRobot(state, memory) {
     return {direction: memory[0], memory: memory.slice(1)}
 }
 
-let randomVillage = VillageState.random();
+// Finds a route from a place to another in the given graph
+function findRoute(graph, from, to) {
+    let work = [{at: from, route: []}]; // Stores the places to be explored
+    for (let i=0; i<work.length; i++) { // For each place to be explored
+        let {at, route} = work[i];
+        for (let place of graph[at]) { // For each place you could go from the place being explored
+            if (place == to) return route.concat(place); // If they are the destiny, return the route to there
+            // If not the destiny, add to place to be explored if not on the work list already
+            if (!work.some(w => w.at == place)) {
+                work.push({at: place, route: route.concat(place)});
+            }
+        }
+    }
+}
 
-console.log(randomVillage);
+function goalOrientedRobot({place, parcels}, route) {
+    if (route.length == 0) {
+        let parcel = parcels[0];
+        if (parcel.place!=place) {
+            route = findRoute(roadGraph, place, parcel.place);
+        } else {
+            route = findRoute(roadGraph, place, parcel.address);
+        }
+    }
+    return {direction: route[0], memory: route.slice(1)}
+}
 
-runRobot(randomVillage,routeRobot,[]);
+function compareRobots(robotA, robotB, numberOfTests) {
+    let turnCounter = {};
+    turnCounter[robotA.name] = 0
+    turnCounter[robotB.name] = 0
+
+    for (let testNumber=0; testNumber<numberOfTests; testNumber++) {
+        let randomVillage = VillageState.random();
+        turnCounter[robotA.name] += runRobot(randomVillage,robotA.function,robotA.memory);
+        turnCounter[robotB.name] += runRobot(randomVillage,robotB.function,robotB.memory);
+    }
+    console.log(`${robotA.name} turn average: ${turnCounter[robotA.name]/numberOfTests}`);
+    console.log(`${robotB.name} turn average: ${turnCounter[robotB.name]/numberOfTests}`);
+}
+
+let randomRobotToCompare = {
+    name: 'randomRobot',
+    function: randomRobot,
+    memory: []
+}
+
+let routeRobotToCompare = {
+    name: 'routeRobot',
+    function: routeRobot,
+    memory: []
+}
+
+let goalOrientedToCompare = {
+    name: 'goalOrientedRobot',
+    function: goalOrientedRobot,
+    memory: []
+}
+
+compareRobots(goalOrientedToCompare, routeRobotToCompare, 1000)
