@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceFolder}\\Project_Robot.js"
+            "program": "${workspaceFolder}\\7_3_PersistentGroup.js"
         }
     ]
 }

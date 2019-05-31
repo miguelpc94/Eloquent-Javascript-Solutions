@@ -134,7 +134,6 @@ function findRoute(graph, from, to) {
         }
     }
 }
-
 function goalOrientedRobot({place, parcels}, route) {
     if (route.length == 0) {
         let parcel = parcels[0];
@@ -143,6 +142,30 @@ function goalOrientedRobot({place, parcels}, route) {
         } else {
             route = findRoute(roadGraph, place, parcel.address);
         }
+    }
+    return {direction: route[0], memory: route.slice(1)}
+}
+
+function findShortestRoute({place, parcels}) {
+    let bestRoute=[];
+    let shortestLength=Infinity;
+    for (parcel of parcels) {
+        if (parcel.place!=place) {
+            route = findRoute(roadGraph, place, parcel.place);
+        } else {
+            route = findRoute(roadGraph, place, parcel.address);
+        }
+        if (route.length<shortestLength) {
+            bestRoute=route;
+            shortestLength=route.length
+        }
+    }
+    return bestRoute;
+}
+
+function efficientGoalOrientedRobot(villageState, route) {
+    if (route.length == 0) {
+        route = findShortestRoute(villageState)
     }
     return {direction: route[0], memory: route.slice(1)}
 }
@@ -179,4 +202,10 @@ let goalOrientedToCompare = {
     memory: []
 }
 
-compareRobots(goalOrientedToCompare, routeRobotToCompare, 1000)
+let efficientGoalOrientedToCompare = {
+    name: 'efficientGoalOrientedRobot',
+    function: efficientGoalOrientedRobot,
+    memory: []
+}
+
+compareRobots(goalOrientedToCompare, efficientGoalOrientedToCompare, 10000)
